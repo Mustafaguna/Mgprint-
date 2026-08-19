@@ -6,10 +6,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Unzip Source Code
+      - name: Extract ZIP to Root
         run: |
-          unzip -o *.zip -d extracted_project
-          find extracted_project -maxdepth 2 -name "build.gradle*" -exec dirname {} \; | head -n 1 | xargs -I {} cp -r {}/. .
+          mkdir -p temp_extracted
+          unzip -o *.zip -d temp_extracted
+          # ZIP içindeki 'app', 'gradle', 'build.gradle.kts' dosyalarını bulup ana dizine taşır
+          ROOT_DIR=$(find temp_extracted -name "settings.gradle*" -exec dirname {} \; | head -n 1)
+          cp -rn $ROOT_DIR/* .
           chmod +x gradlew
           
       - uses: actions/setup-java@v4
@@ -17,11 +20,11 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
           
-    - name: Build APK
-        run: ./gradlew assembleDebug
+      - name: Build APK
+        run: ./gradlew assembleDebug --stacktrace
         
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: MGPrint-APK
-          path: app/build/outputs/apk/debug/app-debug.apk
+          path: "**/build/outputs/apk/debug/*.apk"
